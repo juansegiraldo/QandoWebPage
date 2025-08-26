@@ -4,16 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qando - Quantum Biotechnology Revolution</title>
+    <link rel="icon" type="image/png" href="assets/middle_cloud.png">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <h1 class="logo">Qando</h1>
+                <a href="#" aria-label="Qando Home">
+                    <img src="assets/logo.png" alt="Qando" class="logo-img">
+                </a>
             </div>
-            <nav class="nav-menu">
+            <nav class="nav-menu" id="site-nav" aria-label="Primary">
                 <ul>
                     <li><a href="#technology">Technology</a></li>
                     <li><a href="#applications">Applications</a></li>
@@ -24,7 +30,7 @@
         </div>
     </header>
 
-    <main>
+    <main id="main">
         <!-- Hero Section -->
         <section class="hero">
             <div class="container">
@@ -181,7 +187,8 @@
                         </div>
                     </div>
                     <div class="contact-form">
-                        <form>
+                        <div id="form-status" class="sr-only" role="status" aria-live="polite"></div>
+                        <form aria-labelledby="contact-heading">
                             <input type="text" placeholder="Your Name" required>
                             <input type="email" placeholder="Your Email" required>
                             <input type="text" placeholder="Company/Organization">

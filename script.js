@@ -16,10 +16,10 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
     if (window.scrollY > 100) {
-        navbar.style.background = 'rgba(5, 8, 16, 0.98)';
-        navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.3)';
+        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+        navbar.style.boxShadow = '0 2px 16px rgba(0, 0, 0, 0.08)';
     } else {
-        navbar.style.background = 'rgba(10, 14, 26, 0.95)';
+        navbar.style.background = 'rgba(255, 255, 255, 0.92)';
         navbar.style.boxShadow = 'none';
     }
 });
@@ -147,9 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
             inputs.forEach(input => {
                 if (!input.value.trim()) {
                     input.style.borderColor = '#ff6b35';
+                    input.setAttribute('aria-invalid', 'true');
                     isValid = false;
                 } else {
-                    input.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    input.style.borderColor = 'rgba(0, 78, 122, 0.2)';
+                    input.removeAttribute('aria-invalid');
                 }
             });
             
@@ -160,11 +162,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.textContent = 'Message Sent!';
                 button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
                 
+                const statusRegion = document.getElementById('form-status');
+                if (statusRegion) {
+                    statusRegion.textContent = 'Your message has been sent successfully.';
+                }
+
                 setTimeout(() => {
                     button.textContent = originalText;
                     button.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
                     this.reset();
                 }, 3000);
+            } else {
+                const statusRegion = document.getElementById('form-status');
+                if (statusRegion) {
+                    statusRegion.textContent = 'Please complete the required fields highlighted.';
+                }
             }
         });
     }
@@ -197,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         particles.forEach((particle, index) => {
             particle.addEventListener('mouseenter', () => {
                 particle.style.transform += ' scale(1.5)';
-                particle.style.boxShadow = '0 0 20px rgba(0, 102, 255, 0.8)';
+                particle.style.boxShadow = '0 0 20px rgba(0, 78, 122, 0.8)';
             });
             
             particle.addEventListener('mouseleave', () => {
@@ -252,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     left: 0;
                     right: 0;
                     background: var(--darker-bg);
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    border-top: 1px solid rgba(0, 0, 0, 0.06);
                     padding: 20px;
                 }
                 .nav-menu.active {
