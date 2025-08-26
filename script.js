@@ -182,41 +182,195 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Enhanced quantum particle animation with mouse interaction
+// Wave Animation with Canvas
 document.addEventListener('DOMContentLoaded', () => {
-    const quantumAnimation = document.querySelector('.quantum-animation');
-    if (quantumAnimation) {
-        let mouseX = 0;
-        let mouseY = 0;
-        let isMouseInside = false;
-        
-        quantumAnimation.addEventListener('mouseenter', () => {
-            isMouseInside = true;
-        });
-        
-        quantumAnimation.addEventListener('mouseleave', () => {
-            isMouseInside = false;
-        });
-        
-        quantumAnimation.addEventListener('mousemove', (e) => {
-            const rect = quantumAnimation.getBoundingClientRect();
-            mouseX = e.clientX - rect.left - rect.width / 2;
-            mouseY = e.clientY - rect.top - rect.height / 2;
-        });
-        
-        // Add interactive effect to particles
-        const particles = quantumAnimation.querySelectorAll('.particle');
-        particles.forEach((particle, index) => {
-            particle.addEventListener('mouseenter', () => {
-                particle.style.transform += ' scale(1.5)';
-                particle.style.boxShadow = '0 0 20px rgba(0, 78, 122, 0.8)';
+    const canvas = document.getElementById('waveCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    let width, height, centerY;
+    let time = 0;
+    let animationId;
+
+    // Your custom color palette
+    const colorPalette = ['#345e77', '#004e7a', '#9bc3c2'];
+
+    // Wave configuration
+    class Wave {
+        constructor(index, totalWaves) {
+            // Each wave has different properties
+            this.amplitude = 60 * Math.exp(-index * 0.3); // Decreasing amplitude
+            this.frequency = 0.5 + index * 0.3; // Increasing frequency
+            this.damping = 0.003 + index * 0.001; // Damping factor
+            this.phase = index * Math.PI / 4; // Phase offset
+            this.color = this.generateColor(index, totalWaves);
+            
+            // Particle properties
+            this.particleX = 0;
+            this.particleY = 0;
+            this.particlePhase = Math.random() * Math.PI * 2;
+            this.particleSpeed = 0.02 + Math.random() * 0.01;
+            this.particleSize = 4 + Math.random() * 3;
+            this.particleTrail = [];
+            this.maxTrailLength = 15;
+        }
+
+        generateColor(index, total) {
+            // Distribute colors from palette with variations
+            const baseColor = colorPalette[index % colorPalette.length];
+            
+            // Create variations by adjusting opacity
+            const opacity = 0.4 + (index / total) * 0.3;
+            
+            // Convert hex to rgba
+            const r = parseInt(baseColor.slice(1, 3), 16);
+            const g = parseInt(baseColor.slice(3, 5), 16);
+            const b = parseInt(baseColor.slice(5, 7), 16);
+            
+            return {
+                main: `rgba(${r}, ${g}, ${b}, ${opacity})`,
+                particle: baseColor,
+                glow: `rgba(${r}, ${g}, ${b}, 0.2)`
+            };
+        }
+
+        calculateY(x, t) {
+            // Damped oscillation formula: A * e^(-αx) * sin(ωx + φ + vt)
+            const dampingFactor = Math.exp(-this.damping * x);
+            const oscillation = Math.sin(this.frequency * x + this.phase + t * 0.5);
+            return this.amplitude * dampingFactor * oscillation;
+        }
+
+        draw(ctx, width, centerY, t) {
+            ctx.strokeStyle = this.color.main;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 1;
+            
+            ctx.beginPath();
+            
+            // Draw the wave
+            for (let x = 0; x <= width; x += 2) {
+                const y = this.calculateY(x / 20, t) + centerY;
+                
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+            
+            // Update and draw particle
+            this.updateParticle(width, centerY, t);
+            this.drawParticle(ctx);
+        }
+
+        updateParticle(width, centerY, t) {
+            // Move particle along the x-axis
+            this.particlePhase += this.particleSpeed;
+            
+            // Calculate position along the wave
+            const xPos = (Math.sin(this.particlePhase) * 0.5 + 0.5) * width * 0.9 + width * 0.05;
+            this.particleX = xPos;
+            this.particleY = this.calculateY(xPos / 20, t) + centerY;
+            
+            // Update trail
+            this.particleTrail.push({ x: this.particleX, y: this.particleY });
+            if (this.particleTrail.length > this.maxTrailLength) {
+                this.particleTrail.shift();
+            }
+        }
+
+        drawParticle(ctx) {
+            // Draw particle trail
+            this.particleTrail.forEach((point, index) => {
+                const opacity = (index / this.particleTrail.length) * 0.3;
+                ctx.globalAlpha = opacity;
+                ctx.fillStyle = this.color.glow;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, this.particleSize * 0.8, 0, Math.PI * 2);
+                ctx.fill();
             });
             
-            particle.addEventListener('mouseleave', () => {
-                particle.style.transform = particle.style.transform.replace(' scale(1.5)', '');
-                particle.style.boxShadow = 'none';
-            });
+            // Draw glowing particle
+            ctx.globalAlpha = 1;
+            
+            // Outer glow
+            const gradient = ctx.createRadialGradient(
+                this.particleX, this.particleY, 0,
+                this.particleX, this.particleY, this.particleSize * 2.5
+            );
+            gradient.addColorStop(0, this.color.particle);
+            gradient.addColorStop(0.4, this.color.glow);
+            gradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.particleX, this.particleY, this.particleSize * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Core particle
+            ctx.fillStyle = this.color.particle;
+            ctx.beginPath();
+            ctx.arc(this.particleX, this.particleY, this.particleSize * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner highlight
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.arc(this.particleX - this.particleSize * 0.2, this.particleY - this.particleSize * 0.2, 
+                   this.particleSize * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Initialize waves
+    const waves = [];
+    const numWaves = 5;
+    
+    for (let i = 0; i < numWaves; i++) {
+        waves.push(new Wave(i, numWaves));
+    }
+
+    function resize() {
+        width = canvas.offsetWidth;
+        height = canvas.offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+        centerY = height / 2;
+    }
+
+    function animate() {
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, width, height);
+        
+        // Draw all waves and particles
+        waves.forEach(wave => {
+            wave.draw(ctx, width, centerY, time);
         });
+        
+        time += 0.02;
+        animationId = requestAnimationFrame(animate);
+    }
+
+    function init() {
+        resize();
+        animate();
+    }
+
+    // Event listeners
+    window.addEventListener('resize', resize);
+    
+    // Start animation
+    init();
+
+    // Cleanup function (useful if this is part of a larger application)
+    function cleanup() {
+        cancelAnimationFrame(animationId);
+        window.removeEventListener('resize', resize);
     }
 });
 
