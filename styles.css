@@ -39,7 +39,7 @@ h1, h2, h4, h5, h6 {
 }
 
 h3 {
-    font-family: 'Martel Sans', sans-serif;
+    font-family: 'Martel Sans', sans-serif
     color: var(--accent-color);
 }
 
