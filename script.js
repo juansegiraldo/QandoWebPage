@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Wave Animation with Canvas
+// Quantum Wave Animation with Canvas - Rydberg Style
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('waveCanvas');
     if (!canvas) return;
@@ -193,65 +193,69 @@ document.addEventListener('DOMContentLoaded', () => {
     let time = 0;
     let animationId;
 
-    // Your custom color palette
+    // Your color palette
     const colorPalette = ['#345e77', '#004e7a', '#9bc3c2'];
 
-    // Wave configuration
-    class Wave {
+    class QuantumWave {
         constructor(index, totalWaves) {
-            // Each wave has different properties
-            this.amplitude = 60 * Math.exp(-index * 0.3); // Decreasing amplitude
-            this.frequency = 0.5 + index * 0.3; // Increasing frequency
-            this.damping = 0.003 + index * 0.001; // Damping factor
-            this.phase = index * Math.PI / 4; // Phase offset
-            this.color = this.generateColor(index, totalWaves);
+            // Create waves with properties matching the Rydberg pattern
+            const n = index + 5; // n from 5 to 14
+            
+            // Peak amplitude at x=0, decreasing with index
+            this.amplitude = 120 / Math.sqrt(index + 1);
+            
+            // Frequency increases with index (more oscillations)
+            this.frequency = 0.8 + index * 0.4;
+            
+            // Damping factor - how quickly it decays
+            this.damping = 0.008 + index * 0.002;
+            
+            // No phase shift - all start at peak
+            this.phase = 0;
+            
+            // Color assignment
+            const t = index / totalWaves;
+            const r = Math.floor(52 + t * 40);
+            const g = Math.floor(94 + t * 100);
+            const b = Math.floor(119 + t * 75);
+            
+            this.color = {
+                main: `rgba(${r}, ${g}, ${b}, ${0.6 - t * 0.3})`,
+                particle: `rgb(${r}, ${g}, ${b})`,
+                glow: `rgba(${r}, ${g}, ${b}, 0.3)`
+            };
             
             // Particle properties
             this.particleX = 0;
             this.particleY = 0;
-            this.particlePhase = Math.random() * Math.PI * 2;
-            this.particleSpeed = 0.02 + Math.random() * 0.01;
-            this.particleSize = 4 + Math.random() * 3;
-            this.particleTrail = [];
-            this.maxTrailLength = 15;
-        }
-
-        generateColor(index, total) {
-            // Distribute colors from palette with variations
-            const baseColor = colorPalette[index % colorPalette.length];
-            
-            // Create variations by adjusting opacity
-            const opacity = 0.4 + (index / total) * 0.3;
-            
-            // Convert hex to rgba
-            const r = parseInt(baseColor.slice(1, 3), 16);
-            const g = parseInt(baseColor.slice(3, 5), 16);
-            const b = parseInt(baseColor.slice(5, 7), 16);
-            
-            return {
-                main: `rgba(${r}, ${g}, ${b}, ${opacity})`,
-                particle: baseColor,
-                glow: `rgba(${r}, ${g}, ${b}, 0.2)`
-            };
+            this.particlePhase = 0;
+            this.particleSpeed = 0.01; // Slowed down by 33%
+            this.particleSize = 5 - index * 0.3;
         }
 
         calculateY(x, t) {
-            // Damped oscillation formula: A * e^(-αx) * sin(ωx + φ + vt)
-            const dampingFactor = Math.exp(-this.damping * x);
-            const oscillation = Math.sin(this.frequency * x + this.phase + t * 0.5);
-            return this.amplitude * dampingFactor * oscillation;
+            // Damped sine wave: A * exp(-αx) * sin(ωx + φ)
+            // All waves start from x=0 with cos (peak at origin)
+            const xNorm = x / 50; // Scale factor for x
+            const dampingFactor = Math.exp(-this.damping * xNorm);
+            const oscillation = Math.cos(this.frequency * xNorm); // cos for peak at x=0
+            
+            // Add subtle time animation
+            const timeModulation = 1 + 0.05 * Math.sin(t * 2 / (this.frequency + 1));
+            
+            return this.amplitude * dampingFactor * oscillation * timeModulation;
         }
 
         draw(ctx, width, centerY, t) {
             ctx.strokeStyle = this.color.main;
             ctx.lineWidth = 2;
-            ctx.globalAlpha = 1;
+            ctx.globalAlpha = 0.8;
             
             ctx.beginPath();
             
-            // Draw the wave
-            for (let x = 0; x <= width; x += 2) {
-                const y = this.calculateY(x / 20, t) + centerY;
+            // Draw wave from left edge to right edge
+            for (let x = 0; x <= width; x += 1) {
+                const y = this.calculateY(x, t) + centerY;
                 
                 if (x === 0) {
                     ctx.moveTo(x, y);
@@ -268,31 +272,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateParticle(width, centerY, t) {
-            // Move particle along the x-axis
+            // Particle moves along the wave
             this.particlePhase += this.particleSpeed;
             
-            // Calculate position along the wave
-            const xPos = (Math.sin(this.particlePhase) * 0.5 + 0.5) * width * 0.9 + width * 0.05;
-            this.particleX = xPos;
-            this.particleY = this.calculateY(xPos / 20, t) + centerY;
+            // Move from left to right, then reset
+            this.particleX = (this.particlePhase * 100) % (width + 100);
             
-            // Update trail
-            this.particleTrail.push({ x: this.particleX, y: this.particleY });
-            if (this.particleTrail.length > this.maxTrailLength) {
-                this.particleTrail.shift();
+            // Calculate Y position on the wave
+            this.particleY = this.calculateY(this.particleX, t) + centerY;
+            
+            // Reset when particle goes off screen
+            if (this.particleX > width) {
+                this.particlePhase = 0;
             }
         }
 
         drawParticle(ctx) {
-            // Draw particle trail
-            this.particleTrail.forEach((point, index) => {
-                const opacity = (index / this.particleTrail.length) * 0.3;
-                ctx.globalAlpha = opacity;
-                ctx.fillStyle = this.color.glow;
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, this.particleSize * 0.8, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            // Only draw if particle is visible
+            if (this.particleX > width) return;
             
             // Draw glowing particle
             ctx.globalAlpha = 1;
@@ -314,25 +311,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Core particle
             ctx.fillStyle = this.color.particle;
             ctx.beginPath();
-            ctx.arc(this.particleX, this.particleY, this.particleSize * 0.7, 0, Math.PI * 2);
+            ctx.arc(this.particleX, this.particleY, this.particleSize * 0.6, 0, Math.PI * 2);
             ctx.fill();
             
             // Inner highlight
             ctx.fillStyle = '#ffffff';
-            ctx.globalAlpha = 0.8;
+            ctx.globalAlpha = 0.7;
             ctx.beginPath();
-            ctx.arc(this.particleX - this.particleSize * 0.2, this.particleY - this.particleSize * 0.2, 
+            ctx.arc(this.particleX - this.particleSize * 0.1, 
+                   this.particleY - this.particleSize * 0.1, 
                    this.particleSize * 0.2, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 
-    // Initialize waves
+    // Initialize waves (10 waves like in the image)
     const waves = [];
-    const numWaves = 5;
+    const numWaves = 10;
     
     for (let i = 0; i < numWaves; i++) {
-        waves.push(new Wave(i, numWaves));
+        waves.push(new QuantumWave(i, numWaves));
     }
 
     function resize() {
@@ -347,12 +345,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear canvas with transparent background
         ctx.clearRect(0, 0, width, height);
         
-        // Draw all waves and particles
+        // Draw center line
+        ctx.strokeStyle = 'rgba(52, 94, 119, 0.05)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(width, centerY);
+        ctx.stroke();
+        
+        // Draw all waves
         waves.forEach(wave => {
             wave.draw(ctx, width, centerY, time);
         });
         
-        time += 0.02;
+        time += 0.015;
         animationId = requestAnimationFrame(animate);
     }
 
@@ -367,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start animation
     init();
 
-    // Cleanup function (useful if this is part of a larger application)
+    // Cleanup function
     function cleanup() {
         cancelAnimationFrame(animationId);
         window.removeEventListener('resize', resize);
